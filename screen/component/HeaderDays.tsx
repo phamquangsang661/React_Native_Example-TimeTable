@@ -20,9 +20,9 @@ export default function HeaderDays(props: inProps) {
         return (
             <SvgText
                 key={key}
-                x={(utils.common.getPercent(width, 95) / (isPotrait ? 5 : 2)) * key + utils.common.getPercent(width, isPotrait ? 6 : 20) - (isPotrait ? 0 : utils.common.getPercent(width, 80))}
+                x={(utils.common.getPercent(width, 95) / (isPotrait ? 5 : 2)) * key + utils.common.getPercent(width, isPotrait ? 6 : 20) - (isPotrait ? 0 : utils.common.getPercent(width, 85))}
                 y={utils.common.getPercent(height, 10)}
-                fontSize={utils.common.getPercent(height, isPotrait ? 5 : 5.5)}
+                fontSize={utils.common.getPercent(height, isPotrait ? 5 : 5)}
                 fill={constantSetting.DAYS_IN_WEEK_STYLES.textColor}>
                 {day}
             </SvgText>

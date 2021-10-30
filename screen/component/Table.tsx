@@ -16,10 +16,12 @@ interface inProps {
     epLeft?: number,
     tableMode: 'PERIOD' | 'TIME',
     onPressCreateNewEvent?: (days: number, time: number, boxRef: React.MutableRefObject<{
-        changeMode?: (param: boxInterface.boxParam, startTime?: number, endTime?: number) => void,
-        getText?: JSX.Element[]
-    }>) => void,
-    onPressEvent?: (days: number, time: number, dataStore: any) => void
+        changeMode?: (param: boxInterface.boxParam, startTime?: number, endTime?: number) => {
+            deleteFunc?: (position: number) => void,
+            position?: number
+        }
+    }>) => void
+    onPressEvent?: (days: number, time: number, dataStore: any, deleteEvent: any) => void
 }
 
 export default forwardRef(function HeaderDays(props: inProps, ref) {
@@ -43,10 +45,22 @@ export default forwardRef(function HeaderDays(props: inProps, ref) {
 
     const timeBoxRef = useRef(null)
     const timeBoxesRef: React.MutableRefObject<React.MutableRefObject<{
-        changeMode?: (param: boxInterface.boxParam, startTime?: number, endTime?: number) => void,
-        getText?: JSX.Element[]
+        changeMode?: (param: boxInterface.boxParam, startTime?: number, endTime?: number) => {
+            removeFunc: (position: number) => void,
+            position: number
+        },
     }>[][]> = useRef([])
 
+    const memEventBox: React.MutableRefObject<{ position?: number, removeFunc?: (position: number) => void }[][]> = useRef([])
+
+    const deleteEventBox = (deleteEvent: { eventStore: any[], index: number }) => {
+        const instance = deleteEvent.eventStore[deleteEvent.index]
+   
+        for (let index = 0; index < instance.length; index++) {
+            instance[index].removeFunc(instance[index].position)
+        }
+
+    }
     const [Table, setTable] = useState(modeArrayInit.map((period: number, time: number) => {
         let column = []
         let boxesRef = []
@@ -64,7 +78,7 @@ export default forwardRef(function HeaderDays(props: inProps, ref) {
                     time={time}
                     tableMode={tableMode}
                     onPressCreateNewEvent={() => onPressCreateNewEvent && onPressCreateNewEvent(parseInt(days), time, box)}
-                    onPressEvent={(dataStore) => onPressEvent && onPressEvent(parseInt(days), time, dataStore)}
+                    onPressEvent={(dataStore, deleteEvent) => onPressEvent && onPressEvent(parseInt(days), time, dataStore, () => { deleteEventBox(deleteEvent) })}
                 />
             ))
             boxesRef.push(box)
@@ -73,22 +87,32 @@ export default forwardRef(function HeaderDays(props: inProps, ref) {
         return column
     }))
     const createSchedule = useCallback((days, timeStart: number, timeEnd: number, dataStore, options = {}) => {
+
+        memEventBox.current.push([])
+        let index = memEventBox.current.length - 1
         if (isPeriod) {
             timeStart -= 1
             timeEnd -= 1
             for (let time = timeStart; time <= timeEnd; time++) {
                 let changeMode = timeBoxesRef.current[time][days].current.changeMode
                 if (time == timeStart) {
-                    changeMode?.({ boxMode: 'Head', dataStore, ...options })
+
+                    let reset = changeMode?.({ boxMode: 'Head', dataStore, ...options, deleteEvent: { eventStore: memEventBox.current, index } })
+                    if (reset != undefined)
+                        memEventBox.current[index].push(reset)
                     continue
                 }
 
                 if (time == timeEnd) {
-                    changeMode?.({ boxMode: 'Tail', dataStore, ...options })
+                    let reset = changeMode?.({ boxMode: 'Tail', dataStore, ...options, deleteEvent: { eventStore: memEventBox.current, index } })
+                    if (reset != undefined)
+                        memEventBox.current[index].push(reset)
                     continue
                 }
 
-                changeMode?.({ boxMode: 'Body', dataStore, ...options })
+                let reset = changeMode?.({ boxMode: 'Body', dataStore, ...options, deleteEvent: { eventStore: memEventBox.current, index } })
+                if (reset != undefined)
+                    memEventBox.current[index].push(reset)
             }
         }
         else {
@@ -96,20 +120,33 @@ export default forwardRef(function HeaderDays(props: inProps, ref) {
             let timeEndHour = moment.duration(timeEnd, 'seconds').hours();
 
             for (let time = timeStartHour; time <= timeEndHour; time++) {
+
                 let changeMode = timeBoxesRef.current[time][days].current.changeMode
 
                 if (time == timeStartHour) {
-                    changeMode?.({ boxMode: 'Head', dataStore, ...options }, timeStart, timeEnd)
+                    let reset = changeMode?.({ boxMode: 'Head', dataStore, ...options, deleteEvent: { eventStore: memEventBox.current, index } }, timeStart, timeEnd)
+                    if (reset != undefined)
+                        memEventBox.current[index].push(reset)
                     continue
                 }
+
                 if (time == timeEndHour) {
-                    changeMode?.({ boxMode: 'Tail', dataStore, ...options }, timeStart, timeEnd)
+                    let reset = changeMode?.({ boxMode: 'Tail', dataStore, ...options, deleteEvent: { eventStore: memEventBox.current, index } }, timeStart, timeEnd)
+                    if (reset != undefined)
+                        memEventBox.current[index].push(reset)
                     continue
                 }
-                changeMode?.({ boxMode: 'Body', dataStore, ...options })
+
+                let reset = changeMode?.({ boxMode: 'Body', dataStore, ...options, deleteEvent: { eventStore: memEventBox.current, index } })
+                if (reset != undefined)
+                    memEventBox.current[index].push(reset)
             }
         }
+        //memEventOneBox.current = []
 
+        // if (memEventOneBox.current.length != 0) {
+        //     memEventBox.current.push(memEventOneBox)
+        // }
     }, [])
 
     const TextLeft = modeArrayInit.map((time: number, key: number) => {
@@ -117,7 +154,7 @@ export default forwardRef(function HeaderDays(props: inProps, ref) {
             key={key}
             x={columnFirstWidth - utils.common.getPercent(width, 5) + (isPotrait ? utils.common.getPercent(width, 4) : 0)}
             y={(columnHeight) * (key + 1) - (isPeriod ? utils.common.getPercent(height, 4) : 0)}
-            fontSize={utils.common.getPercent(columnHeight, isPotrait ? 28 : 20)}
+            fontSize={utils.common.getPercent(columnHeight, isPotrait ? 28 : 15)}
             fill='#777777'>
             {time}
         </SvgText>

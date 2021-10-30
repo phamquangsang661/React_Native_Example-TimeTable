@@ -4,6 +4,8 @@ export namespace boxInterface {
         boxMode: 'Head' | 'Tail' | 'Body',
         boxColor?: string,
         textColor?: string,
+        deleteEvent?: any,
+        textSize?: number
     }
 }
 export namespace tableInterface {

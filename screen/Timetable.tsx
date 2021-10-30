@@ -17,7 +17,7 @@ interface inProps {
     HeaderHeight?: number,
     tableMode: 'PERIOD' | 'TIME',
     onPressCreateNewEvent?: (days: number, time: number) => void,
-    onPressEvent?: (days: number, time: number, dataStore: any) => void
+    onPressEvent?: (days: number, time: number, dataStore: any, deleteEvent: void) => void
 }
 
 export default forwardRef(function Timetable(props: inProps, ref: React.Ref<timeTableInterface.timeTableRef>) {
@@ -46,22 +46,22 @@ export default forwardRef(function Timetable(props: inProps, ref: React.Ref<time
     return (
         <ScrollView style={styles.scrollView} scrollEnabled={false}>
             <HeaderRender ></HeaderRender>
-            <Svg viewBox={`0 0 ${width + epLeft} ${utils.common.getPercent(height, 15)}`} style={{ backgroundColor: 'green', minHeight: '5%', maxHeight: isPotrait ? '14%' : '5%' }}>
+            <Svg viewBox={`0 0 ${width + epLeft} ${utils.common.getPercent(height, 15)}`} style={{ backgroundColor: 'white', minHeight: '5%', maxHeight: isPotrait ? '14%' : '5%' }}>
                 <HeaderDays height={height} width={width} epLeft={epLeft}></HeaderDays>
             </Svg >
             <ScrollView
                 //contentContainerStyle={styles.contentScrollView}
                 onScroll={() => {
                 }}
-                style={{ backgroundColor: 'yellow', flex: 2, minWidth: width, minHeight: height }}>
+                style={{ backgroundColor: 'white', flex: 2, minWidth: width, minHeight: height }}>
                 <Table
                     ref={tableRef}
                     tableMode={tableMode}
                     onPressCreateNewEvent={(days, time, boxRef) => {
                         onPressCreateNewEvent && onPressCreateNewEvent(days, time)
                     }}
-                    onPressEvent={(days, time, dataStore) => {
-                        onPressEvent && onPressEvent(days, time, dataStore)
+                    onPressEvent={(days, time, dataStore, deleteEvent) => {
+                        onPressEvent && onPressEvent(days, time, dataStore, deleteEvent)
                     }}
                 />
             </ScrollView>

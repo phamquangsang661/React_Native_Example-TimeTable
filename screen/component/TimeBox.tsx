@@ -1,4 +1,4 @@
-import React, { useState, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { useState, useCallback, forwardRef, useImperativeHandle, useRef, useMemo } from 'react';
 import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg'
 import moment from 'moment';
 
@@ -14,7 +14,7 @@ interface inProps {
     time: number,
     memRef: any,
     onPressCreateNewEvent?: () => void,
-    onPressEvent?: (dataStore: any) => void,
+    onPressEvent?: (dataStore: any, deleteEvent: any) => void,
     tableMode: 'PERIOD' | 'TIME'
 }
 
@@ -22,17 +22,38 @@ interface inProps {
 export default forwardRef(function createTimeBox(props: inProps, ref) {
     const { columnWidth, columnHeight, columnFirstWidth, days, time, onPressCreateNewEvent, memRef, onPressEvent, tableMode } = props
     const [boxState, setBoxState] = useState('isNone')
-    // const settingRef: React.MutableRefObject<{ boxColor?: string, textColor?: string, dataStore?: any }[]> = useRef([])
-    const [boxStore, setBoxStore] = useState([<React.Fragment key={0} />])
+    const boxStoreRealLength = useRef(1)
+    const boxStoreRef = useRef([<React.Fragment key={0} />])
+    const [isChanging, setIsChanging] = useState(true)
 
     let isPeriod = tableMode == 'PERIOD' ? true : false
-    const reset = () => {
-        if (boxStore.length <= 1)
-            setBoxState('isNone')
-        else
-            setBoxState('isEvent')
+
+    if (boxState == 'isNone' && boxStoreRealLength.current > 1) {
+        setBoxState('isEvent')
     }
-    const createSmallBox = (key: number, y: number, height: number, setting: { boxColor?: string, textColor?: string, dataStore?: any } = { dataStore: {} }, pos: 'HEAD' | 'TAIL' | 'BODY') => {
+
+    const reset = () => {
+        if (boxStoreRealLength.current <= 1)
+            setBoxState('isNone')
+        else {
+            setBoxState('isEvent')
+        }
+    }
+
+    const removeEventFromBox = useCallback((position: number) => {
+        boxStoreRef.current[position] = <React.Fragment key={position}></React.Fragment>
+        boxStoreRealLength.current -= 1
+        if (boxStoreRealLength.current == 1) {
+            boxStoreRef.current = [<React.Fragment key={0} />]
+            setBoxState('isNone')
+        }
+        else {
+            setBoxState('isNone')
+        }
+
+        setIsChanging(!isChanging)
+    }, [boxState])
+    const createSmallBox = (key: number, y: number, height: number, setting: { boxColor?: string, textColor?: string, textSize?: number, dataStore?: any, deleteEvent?: any } = { dataStore: {} }, pos: 'HEAD' | 'TAIL' | 'BODY') => {
         return (
             <React.Fragment key={key}>
                 <Rect
@@ -40,39 +61,33 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
                     fill={setting?.boxColor ?? 'green'}
                     x={columnFirstWidth + columnWidth * days + utils.common.getPercent(columnWidth, 5)}
                     y={y}
-                    height={height + 1}
+                    height={height + 0.5}
                     width={columnWidth - utils.common.getPercent(columnWidth, 10)}
-                    onPress={() => onPressEventCell(setting.dataStore, key - 1)}
+                    onPress={() => onPressEventCell(setting.dataStore, setting.deleteEvent)}
                 >
                 </Rect>
-                {pos == 'HEAD' && <LineDraw x={columnFirstWidth + columnWidth * days} y={y} up={true} left={true} right={true}></LineDraw>}
-                {pos == 'TAIL' && <LineDraw x={columnFirstWidth + columnWidth * days} y={y} down={true} left={true} right={true}></LineDraw>}
-                {pos == 'BODY' && <LineDraw x={columnFirstWidth + columnWidth * days} y={y} left={true} right={true}></LineDraw>}
+                {pos == 'HEAD' && <LineDraw x={columnFirstWidth + columnWidth * days} y={columnHeight * time} up={true} ></LineDraw>}
+                {/* {pos == 'TAIL' && <LineDraw x={columnFirstWidth + columnWidth * days} y={y} down={boxStoreRealLength.current <= 1} left={true} right={true}></LineDraw>} */}
+                {pos == 'BODY' && <LineDraw x={columnFirstWidth + columnWidth * days} y={y} up={boxStoreRealLength.current > 1} down={boxStoreRealLength.current > 1}></LineDraw>}
                 {pos == 'HEAD' && <SvgText
                     key={key}
                     x={columnFirstWidth + columnWidth * days + utils.common.getPercent(columnWidth, 15)}
                     y={y + utils.common.getPercent(columnHeight, 25)}
                     fill={setting?.textColor ?? 'black'}
-                    fontSize={utils.common.getPercent(columnHeight, 20)}
+                    fontSize={setting.textSize ? setting.textSize : utils.common.getPercent(columnHeight, 20)}
                 >
                     {setting.dataStore?.text ?? 'HAHA'}
                 </SvgText>}
             </React.Fragment>
-
         )
     }
 
     useImperativeHandle(ref, () => ({
-        changeMode: ({ dataStore, boxMode, boxColor, textColor }: boxInterface.boxParam, startTime?: number, endTime?: number) => {
+
+        changeMode: ({ dataStore, boxMode, boxColor, textColor, textSize, deleteEvent }: boxInterface.boxParam, startTime?: number, endTime?: number) => {
             memRef.current = null
-            let tmpBoxStore = [...boxStore]
             switch (boxMode) {
                 case 'Head': {
-                    // settingRef.current.push({
-                    //     boxColor,
-                    //     textColor,
-                    //     dataStore
-                    // })
                     let y = (columnHeight) * time + utils.common.getPercent(columnHeight, 5)
                     let height = columnHeight
 
@@ -85,8 +100,7 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
                         }
                     }
 
-                    tmpBoxStore.push(createSmallBox(tmpBoxStore.length + 1, y, height, { boxColor, textColor, dataStore }, 'HEAD'))
-                    setBoxStore(tmpBoxStore)
+                    boxStoreRef.current.push(createSmallBox(boxStoreRealLength.current, y, height, { boxColor, textColor, textSize, dataStore, deleteEvent }, 'HEAD'))
                     setBoxState('isEvent')
                     break;
                 }
@@ -98,19 +112,25 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
                         height = ((columnHeight * 24) / (24 * 60 * 60)) * ((endTime ? endTime : 0) - startOfEnd)
                     }
 
-                    tmpBoxStore.push(createSmallBox(tmpBoxStore.length + 1, y, height, { boxColor, textColor, dataStore }, 'TAIL'))
-                    setBoxStore(tmpBoxStore)
+                    boxStoreRef.current.push(createSmallBox(boxStoreRealLength.current, y, height, { boxColor, textColor, textSize, dataStore, deleteEvent }, 'TAIL'))
                     setBoxState('isEvent')
                     break;
                 }
                 case 'Body': {
                     let y = (columnHeight) * time
                     let height = columnHeight
-                    tmpBoxStore.push(createSmallBox(tmpBoxStore.length + 1, y, height, { boxColor, textColor, dataStore }, 'BODY'))
-                    setBoxStore(tmpBoxStore)
+
+                    boxStoreRef.current.push(createSmallBox(boxStoreRealLength.current, y, height, { boxColor, textColor, textSize, dataStore, deleteEvent }, 'BODY'))
                     setBoxState('isEvent')
                     break;
                 }
+            }
+            boxStoreRealLength.current += 1
+            setIsChanging(!isChanging)
+
+            return {
+                removeFunc: removeEventFromBox,
+                position: boxStoreRealLength.current - 1
             }
         }
     }));
@@ -120,11 +140,6 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
             <Line x1={props.x1} y1={props.y1} x2={props.x2} y2={props.y2} stroke='#F4F4F4' strokeWidth={1}> </Line>
         ) : <></>
     )
-
-    // const removeBox=(position:number)=>{
-    //     let tmpBoxStore=[...boxStore]
-    //     tmpBoxStore.
-    // }
 
     const LineDraw = (props: { x: number, y: number, up?: boolean, left?: boolean, right?: boolean, down?: boolean }) => {
         //#DFDFDF
@@ -148,18 +163,17 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
             y={(columnHeight) * time}
             height={columnHeight}
             width={columnWidth}
-            //stroke='#DFDFDF'
             onPress={() => onPressCell(time, days)}
         >
         </Rect>
-        <LineDraw x={columnFirstWidth + columnWidth * days} y={(columnHeight) * time} up={true} left={true} right={true} down={true} />
+        <LineDraw x={columnFirstWidth + columnWidth * days} y={(columnHeight) * time} up={time != 0} left={true} right={true} />
         <Line30 x1={columnFirstWidth + columnWidth * days} y1={(columnHeight) * time + columnHeight / 2} x2={columnFirstWidth + columnWidth * days + columnWidth} y2={(columnHeight) * time + columnHeight / 2} />
     </React.Fragment>)
 
     const BoxEvent = () => (
         <React.Fragment key={(time + 1) * (days + 1)}>
             <Rect
-                key={boxStore.length + 2}
+                key={boxStoreRealLength.current + 2}
                 fill='white'
                 x={columnFirstWidth + columnWidth * days}
                 y={(columnHeight) * time}
@@ -168,28 +182,29 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
                 onPress={() => onPressCell(time, days)}
             >
             </Rect>
-            <Line30 key={boxStore.length + 3} x1={columnFirstWidth + columnWidth * days} y1={(columnHeight) * time + columnHeight / 2} x2={columnFirstWidth + columnWidth * days + columnWidth} y2={(columnHeight) * time + columnHeight / 2} />
-            {boxStore}
+            <Line30 key={boxStoreRealLength.current + 3} x1={columnFirstWidth + columnWidth * days} y1={(columnHeight) * time + columnHeight / 2} x2={columnFirstWidth + columnWidth * days + columnWidth} y2={(columnHeight) * time + columnHeight / 2} />
+            <LineDraw x={columnFirstWidth + columnWidth * days} y={(columnHeight) * time} left={true} right={true} ></LineDraw>
+            {boxStoreRef.current}
         </React.Fragment>
     )
+
 
     const BoxNew = () => (
         <React.Fragment key={(time + 1) * (days + 1)}>
             <Rect
-                key={boxStore.length + 2}
+                key={boxStoreRealLength.current + 2}
                 fill='white'
                 x={columnFirstWidth + columnWidth * days}
                 y={(columnHeight) * time}
                 height={columnHeight}
                 width={columnWidth}
-
             >
             </Rect>
-            <Line30 key={boxStore.length + 3} x1={columnFirstWidth + columnWidth * days} y1={(columnHeight) * time + columnHeight / 2} x2={columnFirstWidth + columnWidth * days + columnWidth} y2={(columnHeight) * time + columnHeight / 2} />
-            {boxStore.length == 1 && <LineDraw x={columnFirstWidth + columnWidth * days} y={(columnHeight) * time} up={true} left={true} right={true} down={true} />}
-            {boxStore}
+            <Line30 key={boxStoreRealLength.current + 3} x1={columnFirstWidth + columnWidth * days} y1={(columnHeight) * time + columnHeight / 2} x2={columnFirstWidth + columnWidth * days + columnWidth} y2={(columnHeight) * time + columnHeight / 2} />
+            {boxStoreRealLength.current == 1 && <LineDraw x={columnFirstWidth + columnWidth * days} y={(columnHeight) * time} up={true} left={true} right={true} down={true} />}
+            {boxStoreRealLength.current > 1 && boxStoreRef.current}
             <Rect
-                key={boxStore.length + 4}
+                key={boxStoreRealLength.current + 4}
                 fill='#99BFFD'
                 x={columnFirstWidth + columnWidth * days + utils.common.getPercent(columnWidth, 5)}
                 y={(columnHeight) * time + utils.common.getPercent(columnHeight, 5)}
@@ -203,16 +218,19 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
         </React.Fragment>
     )
 
-    const onPressEventCell = useCallback((dataStore, position) => {
+    const onPressEventCell = useCallback((dataStore: any, deleteEvent: any) => {
         memRef.current && memRef.current()
         memRef.current = null
-        onPressEvent?.(dataStore)
-    }, [])
+        onPressEvent?.(dataStore, deleteEvent)
+    }, [boxStoreRef.current])
+
     const onPressCell = useCallback((time, days) => {
+
         switch (boxState) {
             case 'isEvent': {
                 memRef.current && memRef.current()
                 memRef.current = reset
+
                 setBoxState('isNewPress');
                 break;
             }
@@ -223,7 +241,7 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
                 break;
             }
             case 'isNewPress': {
-                if (boxStore.length == 1)
+                if (boxStoreRealLength.current == 1)
                     setBoxState('isNone');
                 else
                     setBoxState('isEvent')
@@ -231,9 +249,11 @@ export default forwardRef(function createTimeBox(props: inProps, ref) {
                 break;
             }
         }
+
     }, [boxState])
 
     const RenderBox = () => {
+
         if (boxState == 'isEvent') {
             return (
                 <BoxEvent />
