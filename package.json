@@ -1,6 +1,6 @@
 {
-  "name": "RN-timetable",
-  "version": "1.0.4",
+  "name": "rn-timetable",
+  "version": "1.0.2",
   "description": "Timetable react native",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",

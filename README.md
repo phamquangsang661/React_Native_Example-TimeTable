@@ -7,37 +7,40 @@
 ---
 
 ```
-npm install timetable-component-react-native
+npm install rn-timetable
+#OR
+yarn add rn-timetable
 ```
 
 ### How to use
 
-- Image
-Period Mode
-![Period Mode](image/period_mode.gif)
-Time Mode
-![Time Mode](image/time_mode.gif)
-Day Mode 1
-![Day mode 2](image/day_mode_1.jpg)
-Day Mode 2
-![Day mode 2](image/day_mode_2.jpg)
----
+- Image<br>
+Period Mode <br>
+![Period Mode](image/period_mode.gif) <br>
+Time Mode<br>
+![Time Mode](image/time_mode.gif)<br>
+Day Mode 1<br>
+![Day mode 2](image/day_mode_1.jpg)<br>
+Day Mode 2<br>
+![Day mode 2](image/day_mode_2.jpg)<br>
+---<br>
 
 ```react
   const timeTableRef = useRef()
   const [timetableMode, setTimetableMode] = useState('TIME') //TIMETABLE MODE
-
 ```
-- API Reference
-timeTableRef.current.changeMode(): Change mode 
-timeTableRef.current.reset(): reset All data in table
-timeTableRef.current.addSchedule(day, timeStart,timeEnd,dataStore,option): add new time to table
-- Timetable props
-ref: table ref (mush have)
-daysMode: 1 (six day/week) - 2 (seven day/week)
-data: data input (example below)
-tableMode: time(24h) or period(Default: 12 period)
-numberOfPeriod: if u want more than 12 period
+- API Reference<br>
+timeTableRef.current.changeMode(): Change mode <br>
+timeTableRef.current.reset(): reset All data in table<br>
+timeTableRef.current.addSchedule(day, timeStart,timeEnd,dataStore,option): add new time to table<br>
+---<br>
+- Timetable props<br>
+ref: table ref (mush have)<br>
+daysMode: 1 (six day/week) - 2 (seven day/week)<br>
+data: data input (example below)<br>
+tableMode: time(24h) or period(Default: 12 period)<br>
+numberOfPeriod: if u want more than 12 period<br>
+---<br>
 - use in JSX
 ```react
 <Timetable
