@@ -38,7 +38,8 @@ export default forwardRef(function Timetable(props: inProps, ref: React.Ref<time
         onPressEvent,
         data,
         daysMode,
-        numberOfPeriod
+        numberOfPeriod,
+       stateNoteOption
     } = props
     
     const [tableModeState, setTableModeState] = useState(tableMode ? tableMode : 'TIME');
@@ -117,6 +118,7 @@ export default forwardRef(function Timetable(props: inProps, ref: React.Ref<time
                         numberOfPeriod={numberOfPeriod}
                         onPressCreateNewEvent={onPressCreateNewEvent}
                         onPressEvent={onPressEvent}
+                        stateNoteOption={stateNoteOption}
                     ></TableContainer>
                 </ScrollView>
             </ScrollView >

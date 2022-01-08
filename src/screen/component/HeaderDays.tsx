@@ -25,7 +25,19 @@ export default function HeaderDays(props: inProps) {
     const columnFirstWidth = isPortrait ? calp(width, 2) : calp(width, 8)
     //* Get const day of week
     //* In test
-    const DAY_OF_WEEK = daysMode == 1 ? constantSetting.DAYS_IN_WEEK_1 : constantSetting.DAYS_IN_WEEK_2
+    const getDayOfWeek = (daysMode) => {
+        switch (daysMode) {
+            case 1:
+                return constantSetting.DAYS_IN_WEEK_1
+            case 2:
+                return constantSetting.DAYS_IN_WEEK_2
+            case 3:
+                return constantSetting.DAYS_IN_WEEK_3
+            default:
+                return constantSetting.DAYS_IN_WEEK_1
+        }
+    }
+    const DAY_OF_WEEK =getDayOfWeek(daysMode)
 
     //* Cal number of col
     const columnCount = DAY_OF_WEEK.length

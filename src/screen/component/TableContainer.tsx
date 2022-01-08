@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { forwardRef, useState, useImperativeHandle, useRef } from 'react'
+import React, { forwardRef, useState, useImperativeHandle, useRef, useLayoutEffect } from 'react'
 import { Text, useWindowDimensions } from 'react-native';
 import Svg, { Rect, Text as SvgText, Line, Circle } from 'react-native-svg'
 import _ from 'lodash';
@@ -12,6 +12,7 @@ import utils from '../../utils/index';
 const calp = (value: number, percent: number): number => {
     return value * percent / 100
 }
+
 
 const makeAddress = (length: number): string => {
     var result = '';
@@ -26,7 +27,7 @@ const makeAddress = (length: number): string => {
 
 export default forwardRef(function (props: any, ref: any) {
     //* Start State
-    const { tableMode, daysMode, numberOfPeriod, data } = props
+    const { tableMode, daysMode, numberOfPeriod, data, stateNoteOption } = props
 
     //* Ref
     const isFirst = useRef(true)
@@ -43,8 +44,19 @@ export default forwardRef(function (props: any, ref: any) {
 
     //* Get const day of week
     //* In test
-    const DAY_OF_WEEK = daysMode == 1 ? constantSetting.DAYS_IN_WEEK_1 : constantSetting.DAYS_IN_WEEK_2
-
+    const getDayOfWeek = (daysMode) => {
+        switch (daysMode) {
+            case 1:
+                return constantSetting.DAYS_IN_WEEK_1
+            case 2:
+                return constantSetting.DAYS_IN_WEEK_2
+            case 3:
+                return constantSetting.DAYS_IN_WEEK_3
+            default:
+                return constantSetting.DAYS_IN_WEEK_1
+        }
+    }
+    const DAY_OF_WEEK = getDayOfWeek(daysMode)
     //* Cal number of col
     const columnCount = DAY_OF_WEEK.length
     //* Cal number of row
@@ -62,14 +74,24 @@ export default forwardRef(function (props: any, ref: any) {
     const lineTime = ((columnHeight * 24) / (24 * 60 * 60)) * (utils.common.getSecDateNow())
     const arrayVeLine = _.range(1, columnCount) //* array temp of vertical
     const arrayHoLine = _.range(1, rowCount + 2) //* array temp of horizontal
-    const MATRIX_COORDINATES = _.range(1, columnCount + 1).map((value, key) => {
+    const MATRIX_FLATTEN = useRef([])
+    const [MATRIX_COORDINATES, setMATRIXCOORDINATES] = useState(_.range(1, columnCount + 1).map((value, key) => {
         return _.range(1, rowCount + (isPeriod ? 1 : 2)).map((_value, _key) => {
+            MATRIX_FLATTEN.current.push({
+                keyC: key,
+                keyR: _key,
+                x: columnWidth * (key) + columnFirstWidth,
+                y: columnHeight * (_key)
+            })
             return {
                 x: columnWidth * (key) + columnFirstWidth,
                 y: columnHeight * (_key)
             }
         })
-    })
+    }))
+
+
+
 
     //* Current Box State
     const [currentBoxLocationState, setCurrentBoxLocationState] = useState({
@@ -117,6 +139,13 @@ export default forwardRef(function (props: any, ref: any) {
             }
         }
     }
+    //* uselayoutEffect
+
+    useLayoutEffect(() => {
+        initData()
+    })
+
+    //* Function callback
     const deleteEventBox = (address: string) => {
         const inData = timeInstanceRef.current
         const result = inData.filter((obj: JSX.element) => obj.props.address != address)
@@ -127,7 +156,17 @@ export default forwardRef(function (props: any, ref: any) {
         if (isPeriod) {
             //* Days start from 0
             timeStart -= 1 //* Period Start
-            timeEnd -= 1  //* Period End
+            if (timeStart > rowCount) {
+                timeStart = -1
+            }
+            if (timeEnd > rowCount) {
+                timeEnd = -1
+            }
+
+            if (timeStart == -1 || timeEnd == -1) {
+                return
+            }
+
             const address = makeAddress(10)
             const timeTempInstances = timeInstanceRef.current
             timeTempInstances.push((
@@ -145,6 +184,7 @@ export default forwardRef(function (props: any, ref: any) {
                     onPressEvent={onPressEvent}
                     address={address}
                     deleteEvent={() => deleteEventBox(address)}
+                    stateNote={stateNoteOption == null ? true : stateNoteOption}
                 />
             ))
             timeInstanceRef.current = timeTempInstances
@@ -167,6 +207,7 @@ export default forwardRef(function (props: any, ref: any) {
                     onPressEvent={onPressEvent}
                     address={address}
                     deleteEvent={() => deleteEventBox(address)}
+                    stateNote={stateNoteOption == null ? true : stateNoteOption}
                 />
             ))
             timeInstanceRef.current = timeTempInstances
@@ -199,7 +240,7 @@ export default forwardRef(function (props: any, ref: any) {
     //* Call function
     if (isFirst.current) {
         isFirst.current = false
-        initData()
+
     }
 
 
@@ -217,6 +258,13 @@ export default forwardRef(function (props: any, ref: any) {
     const NewBox = (props) => {
         //* Get from props
         const { onPressNew } = props
+        const onPress = (r: number, c: number) => {
+            setCurrentBoxLocationState({
+                x: -1,
+                y: -1
+            })
+            onPressNew(r, c)
+        }
         //* If is Select
         if (currentBoxLocationState.x != -1) {
             let newPos = MATRIX_COORDINATES[currentBoxLocationState.x][currentBoxLocationState.y]
@@ -233,7 +281,7 @@ export default forwardRef(function (props: any, ref: any) {
                         r: currentBoxLocationState.x,
                         c: currentBoxLocationState.y
                     }}
-                    onPressNew={onPressNew}
+                    onPressNew={onPress}
                 />
             )
         }
@@ -327,6 +375,11 @@ export default forwardRef(function (props: any, ref: any) {
         return (
             <React.Fragment key={0}>
                 {timeInstances.map((ins, key) => {
+                    ins = React.cloneElement(ins, {
+                        ...ins.props,
+                        stateNote: stateNoteOption == null ? true : stateNoteOption
+                    });
+
                     return (
                         <React.Fragment key={key}>
                             {ins}

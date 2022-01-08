@@ -7,6 +7,7 @@ export default {
     DAYS_IN_WEEK: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     DAYS_IN_WEEK_1: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     DAYS_IN_WEEK_2: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat','Sun'],
+    DAYS_IN_WEEK_3: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     DAYS_IN_WEEK_STYLES: {
         textColor: '#777777',
         line: {

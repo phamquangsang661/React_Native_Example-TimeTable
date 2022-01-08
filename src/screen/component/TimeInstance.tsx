@@ -34,21 +34,14 @@ export default forwardRef((props: any, ref: any) => {
         startTime,
         endTime,
         day,
-
+        stateNote
     } = props
 
     //* State
     //*First time will show
-    const [stateNote, setStateNote] = useState(true)
+
     //* Setting
 
-    const changeStateNote = () => {
-        setStateNote(!stateNote)
-    }
-
-    useImperativeHandle(ref, () => ({
-        changeStateNote: changeStateNote
-    }));
 
     //* State of box
 
@@ -62,10 +55,10 @@ export default forwardRef((props: any, ref: any) => {
         //* 
         const boxColor = optionBox.boxColor ? optionBox.boxColor : '#99BFFD'
         //* For Text
-        const fontSize = calp(height, 2)
+        const fontSize = calp(columnWidth, 20)
         const fontBias = calp(height, 1)
         const fontColor = optionBox.fontColor ? optionBox.fontColor : 'white'
-        const countText = ((dataStore?.text ?? "Không xác định").length + 1) / 5
+        const countText = ((dataStore?.text ?? "Không xác định").length) / 5 + 1
 
         return (
             <React.Fragment>
@@ -88,9 +81,9 @@ export default forwardRef((props: any, ref: any) => {
                     <TSpan fontSize={fontSize} inlineSize={columnWidth - 2 * minWidth - fontBias} fontWeight="bold">
                         {dataStore?.text ?? "Không xác định"}
                     </TSpan >
-                    <TSpan y={matrix[day][yStart].y + calp(height, 2.5) * (countText + 1) + 2 * minWidth} fontSize={fontSize} inlineSize={columnWidth - 2 * minWidth - fontBias}  >
+                    {stateNote && <TSpan y={matrix[day][yStart].y + calp(height, 2.5) * (countText) + 2 * minWidth} fontSize={fontSize} inlineSize={columnWidth - 2 * minWidth - fontBias}  >
                         {dataStore?.noteText ?? "Không có ghi chú"}
-                    </TSpan >
+                    </TSpan >}
                 </SvgText>
             </React.Fragment>
         )
@@ -107,11 +100,11 @@ export default forwardRef((props: any, ref: any) => {
         //* Const
         const boxColor = optionBox.boxColor ? optionBox.boxColor : '#99BFFD'
         //* For Text
-        const fontSize = calp(height, 2)
+        const fontSize = calp(columnWidth, 20)
         const fontBias = calp(height, 0.5)
         const fontColor = optionBox.fontColor ? optionBox.fontColor : 'white'
 
-        const countText = ((dataStore?.text ?? 'Không xác định').length + 1) / 5
+        const countText = ((dataStore?.text ?? 'Không xác định').length) / 5 + 1
         return (
             <React.Fragment>
                 <Rect
@@ -120,7 +113,7 @@ export default forwardRef((props: any, ref: any) => {
                     x={matrix[day][0].x + minWidth}
                     y={y1}
                     rx={borderRadius}
-                    height={y2 - y1 + columnHeight}
+                    height={y2 - y1}
                     width={columnWidth - 2 * minWidth}
                     onPress={() => {
                         onPressEvent(day, startTime, endTime, dataStore, deleteEvent)
@@ -141,14 +134,14 @@ export default forwardRef((props: any, ref: any) => {
 
                         {dataStore?.text ?? 'Không xác định'}
                     </TSpan >
-                    <TSpan
-                        y={y1 + fontBias + calp(height, 2.5) * (countText + 1)}
+                    {stateNote && <TSpan
+                        y={y1 + fontBias + calp(height, 2.5) * (countText)}
                         fontSize={fontSize}
                         inlineSize={columnWidth - 2 * minWidth - fontBias}
                         fill={fontColor}>
 
                         {dataStore?.noteText ?? "Không có ghi chú"}
-                    </TSpan >
+                    </TSpan >}
                 </SvgText>
             </React.Fragment>
         )
@@ -158,7 +151,7 @@ export default forwardRef((props: any, ref: any) => {
         const { x, y } = props
         //* Bias
         const minWidth = calp(height, 1) / 2
-        const verticalLine = calp(columnHeight, 20)
+        const verticalLine = calp(columnWidth, 25)
         const horizontalLine = verticalLine * 1.7
 
         //* Border Radius
